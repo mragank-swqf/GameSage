@@ -1,0 +1,1 @@
+"""GameSage FastAPI application package."""
