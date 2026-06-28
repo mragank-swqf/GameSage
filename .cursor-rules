@@ -1,0 +1,259 @@
+# Project: GameSage — Game Mastery App
+# Purpose: Stateful, multi-step AI coaching agent for gamers. RAG-powered FastAPI API
+#          that assesses player weaknesses, retrieves targeted strategy content from Qdrant,
+#          and generates personalised 7-day coaching plans. Portfolio project — not production grade.
+#          Goal: learn AI engineering deeply and demonstrate it in SDE interviews.
+
+# ═══════════════════════════════════════════════════════════
+# = LANGUAGE & FRAMEWORK =
+# ═══════════════════════════════════════════════════════════
+- Language: Python 3.11
+- API Framework: FastAPI (async endpoints, dependency injection for DB session)
+- ORM: SQLAlchemy (async) with Alembic for migrations
+- Vector DB Client: qdrant-client (Python SDK)
+- LLM + Embeddings: google-generativeai SDK (Gemini API)
+- Data Validation: Pydantic v2 (all request bodies and response models must be typed)
+- HTTP Client: httpx (for CoC and CR official API calls)
+- Testing: pytest + pytest-asyncio
+
+# ═══════════════════════════════════════════════════════════
+# = FOLDER STRUCTURE =
+# ═══════════════════════════════════════════════════════════
+/app
+  /routers        → FastAPI routers (users.py, players.py, games.py, feedback.py)
+  /agent          → Agent pipeline steps (assembler.py, assessor.py, retriever.py, planner.py, taxonomy.py)
+  /services       → External service clients (gemini.py, qdrant.py, coc_api.py, cr_api.py)
+  /db             → SQLAlchemy models (models.py) and session management (session.py)
+  /schemas        → Pydantic request and response schemas (one file per domain)
+  main.py         → FastAPI app entry point, lifespan events, router registration
+
+/alembic          → Alembic migration files (never edit manually, generate via alembic revision)
+/scripts          → One-time runner scripts (scraper.py, gap_fill.py, chunker.py, ingest.py, seed.py, test_retrieval.py)
+/data
+  /games          → Raw markdown strategy docs with YAML frontmatter (one folder per game)
+/tests            → pytest E2E and edge case tests (test_e2e.py, test_edge_cases.py)
+/docs             → README assets (demo.gif, architecture diagram source)
+
+Dockerfile
+docker-compose.yml
+.env              → Never commit. Use .env.example for reference.
+.env.example
+requirements.txt
+.cursorrules      → This file
+
+# ═══════════════════════════════════════════════════════════
+# = FILE NAMING =
+# ═══════════════════════════════════════════════════════════
+- All Python files: snake_case (e.g. coc_api.py, player_stats.py)
+- Routers: named by domain (users.py, players.py, games.py, feedback.py)
+- Schemas: named by domain (player_schemas.py, plan_schemas.py, game_schemas.py)
+- Agent steps: named by function (assembler.py, assessor.py, retriever.py, planner.py)
+- Scripts: named by action verb (scraper.py, ingest.py, seed.py, chunker.py)
+- No abbreviations in filenames unless industry-standard (e.g. coc, cr are fine)
+
+# ═══════════════════════════════════════════════════════════
+# = CODE STANDARDS =
+# ═══════════════════════════════════════════════════════════
+- All FastAPI endpoints must be async def
+- All database operations must use async SQLAlchemy sessions via Depends(get_db)
+- All endpoints must declare a response_model= with a Pydantic schema
+- All endpoints must have a description= and response_description= for Swagger
+- No raw dicts as return values from endpoints — always return typed Pydantic models
+- No hardcoded strings for game names, weakness categories, or skill tiers — use constants from agent/taxonomy.py
+- No print() statements — use Python logging (logging.getLogger(__name__))
+- No commented-out code — delete it or use git history
+- Type hints on every function signature — no bare parameters without types
+- Docstrings on every agent pipeline function (assembler, assessor, retriever, planner) — format: what it takes, what it returns, what external service it calls
+- Error handling: all external calls (Gemini API, Qdrant, CoC API, CR API) wrapped in try-except with structured error logging
+- All HTTPException responses must use the shape: {"detail": str, "step": str, "fallback_used": bool}
+
+# ═══════════════════════════════════════════════════════════
+# = AUTH =
+# ═══════════════════════════════════════════════════════════
+- NO authentication. NO JWT. NO OAuth. NO session tokens.
+- User identity is passed as an integer user_id in the URL path (e.g. /players/{user_id}/stats)
+- Never suggest adding auth middleware, auth dependencies, or token validation
+- This is an intentional constraint — auth is handled in separate projects
+
+# ═══════════════════════════════════════════════════════════
+# = DATABASE =
+# ═══════════════════════════════════════════════════════════
+- ORM: SQLAlchemy async with asyncpg driver
+- Connection string from env: POSTGRES_URL (format: postgresql+asyncpg://user:pass@host:port/db)
+- Session dependency: async generator in db/session.py, injected via Depends(get_db)
+- Never write raw SQL strings — use SQLAlchemy ORM query syntax
+- All schema changes via Alembic migrations only — never alter tables manually
+- JSONB columns (seven_day_plan, loadout_recommendations, identified_weaknesses, stats_snapshot, improvement_delta) must be typed as dict or list in SQLAlchemy and Pydantic
+- TEXT[] columns (retrieved_chunk_ids, preferred_weapons, known_weaknesses, goals, supported_modes) must be typed as List[str]
+- Tables: users, games, user_profiles, player_stats, coaching_plans, progress_logs, feedback
+
+# ═══════════════════════════════════════════════════════════
+# = QDRANT (VECTOR DB) =
+# ═══════════════════════════════════════════════════════════
+- Collection name: game_strategies (constant in services/qdrant.py — never hardcode elsewhere)
+- Vector size: 768 (Gemini text-embedding-004 output dimension)
+- Distance metric: Cosine
+- Payload indexes exist on: game, genre, skill_level, weakness_category, weapon_class, experience_level
+- All retrieval queries MUST include a game filter at minimum — never run an unfiltered search
+- Payload filter format: use qdrant_client.models.Filter with FieldCondition and MatchValue
+- Always deduplicate results by chunk_id before returning
+- Cap merged results at 15 chunks maximum to stay within Gemini context window budget
+- Store retrieved chunk_ids in coaching_plans.retrieved_chunk_ids for every plan generated (audit trail)
+- Connection: host from QDRANT_HOST env, port from QDRANT_PORT env
+
+# ═══════════════════════════════════════════════════════════
+# = GEMINI API =
+# ═══════════════════════════════════════════════════════════
+- Embeddings model: models/text-embedding-004 (768-dim output)
+- Generation model: gemini-1.5-flash (fast, sufficient for coaching plans)
+- API key from env: GEMINI_API_KEY
+- embed_text(text: str) → List[float] lives in services/gemini.py
+- generate(prompt: str) → str lives in services/gemini.py
+- All generation calls expect structured JSON output — always include "Return ONLY valid JSON, no preamble, no markdown fences" in every generation prompt
+- Retry logic: retry once on JSON parse failure before falling back
+- Batching for ingestion: 100ms sleep between embedding calls to respect rate limits
+
+# ═══════════════════════════════════════════════════════════
+# = AGENT PIPELINE =
+# ═══════════════════════════════════════════════════════════
+# The 4-step pipeline is the core of this project. Always preserve this sequence:
+# Step 1 — assembler.py:  assemble_context(user_id, game_id, db) → dict
+# Step 2 — assessor.py:   assess(context, db) → AssessmentResult
+# Step 3 — retriever.py:  retrieve(assessment, context) → List[ChunkResult]
+# Step 4 — planner.py:    generate_plan(context, assessment, chunks, db) → CoachingPlan
+
+- Steps are called sequentially in routers/players.py inside POST /players/{id}/assess/{game_id}
+- Each step is a separate module — never merge steps
+- Weakness categories come from taxonomy.py — never hardcode category strings elsewhere
+- Experience level branching (new / intermediate / experienced) happens ONLY in planner.py prompt construction
+- Rejection history is fetched from feedback table in planner.py before building prompt
+- Per-step timing must be logged at INFO level (helps demo and debugging)
+
+# ═══════════════════════════════════════════════════════════
+# = WEAKNESS CATEGORY TAXONOMY =
+# ═══════════════════════════════════════════════════════════
+# Canonical source: agent/taxonomy.py — import from there, never redefine
+# Shooter (cod, gta_v_online):         positioning | aim | game_sense | loadout | movement | team_comms
+# Strategy/Mobile (coc, cr):           deck_building | resource_management | base_layout | troop_deployment | timing
+# Open World (gta_v_online, rdr2):     mission_strategy | money_making | combat | stealth | progression
+# Fighting (shadow_fight):             combo_execution | defense | character_matchup | progression
+
+# ═══════════════════════════════════════════════════════════
+# = API ENDPOINTS — FULL LIST =
+# ═══════════════════════════════════════════════════════════
+# Users + Profiles
+POST   /users
+POST   /users/{id}/profile
+GET    /users/{id}/profile/{game_id}
+
+# Player Stats
+POST   /players/{id}/stats
+GET    /players/{id}/stats/{game_id}
+
+# Core Agent Pipeline
+POST   /players/{id}/assess/{game_id}          ← triggers full 4-step agent
+
+# Plan Surface Endpoints
+GET    /players/{id}/plan/{game_id}
+GET    /players/{id}/plan/{game_id}/loadouts
+GET    /players/{id}/plan/{game_id}/roadmap
+GET    /players/{id}/plan/{game_id}/missions/today
+GET    /players/{id}/plan/{game_id}/missions/{day}
+
+# Progress Tracking
+POST   /players/{id}/checkin/{game_id}
+GET    /players/{id}/progress/{game_id}
+
+# Freeform Ask (lightweight RAG, no full pipeline)
+POST   /players/{id}/ask/{game_id}
+
+# Feedback
+POST   /feedback
+
+# Live Data (CoC + CR only)
+GET    /games/coc/player/{tag}
+GET    /games/cr/player/{tag}
+
+# Discovery + Health
+GET    /games
+GET    /games/{id}/topics
+GET    /health
+
+# ═══════════════════════════════════════════════════════════
+# = ERROR HANDLING =
+# ═══════════════════════════════════════════════════════════
+- All HTTPException must use this JSON shape: {"detail": str, "step": str, "fallback_used": bool}
+- step field identifies where in the pipeline the error occurred (e.g. "assembler", "assessor", "retriever", "planner")
+- fallback_used: true if a fallback path was taken (e.g. empty retrieval fell back to tier-matched content)
+- Add a global exception handler in main.py for unhandled exceptions — return HTTP 500 with structured body
+- Specific guards:
+    - No player_stats found → HTTP 400, step="assembler"
+    - Gemini returns malformed JSON twice → HTTP 503, step="assessor" or step="planner"
+    - Qdrant returns 0 results after fallback → HTTP 200 with fallback_used=true (not an error, a degraded response)
+    - No active coaching plan for /plan/* endpoints → HTTP 404, step="plan_retrieval"
+
+# ═══════════════════════════════════════════════════════════
+# = DOCKER =
+# ═══════════════════════════════════════════════════════════
+- Three services in docker-compose.yml: postgres, qdrant, api
+- postgres: image postgres:16-alpine, port 5432:5432, volume postgres_data
+- qdrant: image qdrant/qdrant:latest, ports 6333:6333 and 6334:6334, volume qdrant_data
+- api: built from local Dockerfile, port 8000:8000, depends_on postgres and qdrant, env_file .env
+- Dockerfile base: python:3.11-slim, install requirements.txt, uvicorn entrypoint
+- All environment variables injected via .env file — never hardcoded in docker-compose.yml
+- Startup order: docker compose up --build → alembic upgrade head → python scripts/seed.py → python scripts/ingest.py
+
+# ═══════════════════════════════════════════════════════════
+# = ENVIRONMENT VARIABLES =
+# ═══════════════════════════════════════════════════════════
+POSTGRES_URL=postgresql+asyncpg://gamesage:gamesage@postgres:5432/gamesage
+QDRANT_HOST=qdrant
+QDRANT_PORT=6333
+GEMINI_API_KEY=your_key_here
+COC_API_KEY=your_key_here
+CR_API_KEY=your_key_here
+QDRANT_COLLECTION=game_strategies
+
+# ═══════════════════════════════════════════════════════════
+# = PYDANTIC SCHEMAS =
+# ═══════════════════════════════════════════════════════════
+- Every endpoint must declare response_model= — no bare dict returns
+- Nested JSONB fields must have their own Pydantic models (e.g. DailyMission, LoadoutRecommendation, SevenDayPlan)
+- All Optional fields must have an explicit default (Optional[str] = None, not bare Optional[str])
+- Use model_config = ConfigDict(from_attributes=True) on all ORM-mapped schemas
+- Request bodies: suffix *Create (e.g. PlayerStatsCreate, UserCreate)
+- Response bodies: suffix *Response (e.g. CoachingPlanResponse, ProgressLogResponse)
+
+# ═══════════════════════════════════════════════════════════
+# = GIT CONVENTIONS =
+# ═══════════════════════════════════════════════════════════
+- Commit after every individual feature — small, frequent commits
+- Commit message format: type: short description
+  - feat:    new feature or endpoint
+  - fix:     bug fix or prompt tuning
+  - chore:   setup, tooling, docker, dependencies
+  - docs:    README, docstrings, swagger descriptions
+  - data:    corpus files, seed data
+  - test:    test files only
+- Examples from this project:
+  feat: skill assessment llm call with structured output and retry
+  fix: retrieval quality tuning across game corpus
+  chore: docker compose with postgres qdrant and api services
+  data: scraped strategy corpus for coc cr rdr2 shadow fight
+
+# ═══════════════════════════════════════════════════════════
+# = WHAT TO AVOID =
+# ═══════════════════════════════════════════════════════════
+- Never add authentication, JWT, OAuth, or session management — out of scope
+- Never use synchronous SQLAlchemy — always async
+- Never hardcode weakness categories or game names as string literals outside taxonomy.py and seed.py
+- Never return raw dicts from endpoints — always use Pydantic response models
+- Never run unfiltered Qdrant searches — always include at minimum a game filter
+- Never commit .env — only .env.example
+- Never use print() — use logging
+- Never merge agent pipeline steps into a single file
+- Never write raw SQL strings — use SQLAlchemy ORM
+- Never add a frontend, React, or any UI — this is an API-only project
+- Never suggest deployment (Render, Railway, Heroku, AWS) — local Docker only
+- Never add Redis, Celery, or background task queues — out of scope for this project
+- Never split a single strategy unit (one loadout, one deck, one base layout) across two chunks in the chunking pipeline
