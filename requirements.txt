@@ -1,0 +1,27 @@
+# API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Database
+sqlalchemy[asyncio]>=2.0.25
+asyncpg>=0.29.0
+alembic>=1.13.0
+
+# Vector DB + LLM
+qdrant-client>=1.7.0
+google-generativeai>=0.8.0
+
+# HTTP clients + validation
+httpx>=0.26.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Data pipeline (scraper, corpus frontmatter)
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+pyyaml>=6.0.0
+
+# Tests
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
