@@ -1,6 +1,7 @@
 FROM python:3.11-slim
 
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 # Install Python dependencies first (cached layer — only re-runs when requirements.txt changes)
 COPY requirements.txt .
