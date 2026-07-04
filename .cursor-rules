@@ -133,10 +133,9 @@ requirements.txt
 # = WEAKNESS CATEGORY TAXONOMY =
 # ═══════════════════════════════════════════════════════════
 # Canonical source: agent/taxonomy.py — import from there, never redefine
-# Shooter (cod, gta_v_online):         positioning | aim | game_sense | loadout | movement | team_comms
+# Shooter (cod, free_fire):            positioning | aim | game_sense | loadout | movement | team_comms
 # Strategy/Mobile (coc, cr):           deck_building | resource_management | base_layout | troop_deployment | timing
 # Open World (gta_v_online, rdr2):     mission_strategy | money_making | combat | stealth | progression
-# Fighting (shadow_fight):             combo_execution | defense | character_matchup | progression
 
 # ═══════════════════════════════════════════════════════════
 # = API ENDPOINTS — FULL LIST =
@@ -239,7 +238,7 @@ QDRANT_COLLECTION=game_strategies
   feat: skill assessment llm call with structured output and retry
   fix: retrieval quality tuning across game corpus
   chore: docker compose with postgres qdrant and api services
-  data: scraped strategy corpus for coc cr rdr2 shadow fight
+  data: scraped strategy corpus for coc cr rdr2 free fire
 
 # ═══════════════════════════════════════════════════════════
 # = WHAT TO AVOID =
