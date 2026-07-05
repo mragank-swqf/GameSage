@@ -224,6 +224,22 @@ QDRANT_COLLECTION=game_strategies
 - Response bodies: suffix *Response (e.g. CoachingPlanResponse, ProgressLogResponse)
 
 # ═══════════════════════════════════════════════════════════
+# = TESTING (manual) =
+# ═══════════════════════════════════════════════════════════
+- Test every new endpoint with BOTH Swagger UI (http://localhost:8000/docs) AND curl
+- Swagger first for quick iteration and schema inspection; curl to confirm real HTTP behavior
+- Provide curl examples alongside Swagger when shipping a new endpoint
+- PowerShell curl alternative: Invoke-RestMethod for GET; curl.exe for POST with -d / -H flags
+- pytest E2E suite (Day 15) complements manual Swagger + curl testing — does not replace it
+- Postman collection is Day 13 — until then, Swagger + curl are the manual test tools
+
+# ═══════════════════════════════════════════════════════════
+# = GAMES SUPPORTED (canonical list) =
+# ═══════════════════════════════════════════════════════════
+# gta_v_online | rdr2 | cod | free_fire | coc | cr
+# Shadow Fight was removed — use free_fire (shooter) everywhere. Never reference shadow_fight.
+
+# ═══════════════════════════════════════════════════════════
 # = GIT CONVENTIONS =
 # ═══════════════════════════════════════════════════════════
 - Commit after every individual feature — small, frequent commits
