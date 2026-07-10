@@ -13,6 +13,7 @@ last_updated: 2026-07
 
 # Attachments Guide
 
-Redirect to:
+Attachments may refer to:
 
-- Attachments (disambiguation)
+- Attachment - An optional enhancement, modification or accessory for a weapon.
+- Attachments (Weapon Proficiency) - A Weapon Proficiency in Call of Duty: Modern Warfare 3 .

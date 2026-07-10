@@ -13,9 +13,9 @@ last_updated: 2026-07
 
 # Warzone Overview
 
-Announced on March 9th, 2020, Call of Duty: Warzone was released the next day on March 10th. Warzone was downloaded and played by more than 6 million players in 24 hours , 15 million after 3 days , 30 million after 10 days , 50 million after a month , 60 million after less than two months , over 75 million after five months and over 85 million after nine months. Over 100 million after 13 months. By June 2022, Warzone surpassed 125 million total players.
+Announced on March 9th, 2020, Call of Duty: Warzone was released the next day on March 10th. Warzone was downloaded and played by more than 6 million players in 24 hours [ 1 ] , 15 million after 3 days [ 2 ] , 30 million after 10 days [ 3 ] , 50 million after a month [ 4 ] , 60 million after less than two months [ 5 ] , over 75 million after five months [ 6 ] and over 85 million after nine months. [ 7 ] Over 100 million after 13 months. [ 8 ] By June 2022, Warzone surpassed 125 million total players. [ 9 ]
 
-With the release of the sequel Call of Duty: Warzone 2.0 on November 16th, 2022, the servers of Call of Duty: Warzone temporarily remained offline and returned on November 28th, 2022, with the game relaunched as Call of Duty: Warzone Caldera , only with the Caldera map with Battle Royale Solos and Quads playlists. On June 22nd, 2023, it was announced Warzone Caldera would be shutdown on September 21st, 2023.
+With the release of the sequel Call of Duty: Warzone 2.0 on November 16th, 2022, the servers of Call of Duty: Warzone temporarily remained offline and returned on November 28th, 2022, with the game relaunched as Call of Duty: Warzone Caldera , only with the Caldera map with Battle Royale Solos and Quads playlists. On June 22nd, 2023, it was announced Warzone Caldera would be shutdown on September 21st, 2023. [ 10 ]
 
 ### Overview
 
@@ -108,6 +108,22 @@ The Supply Choppers event was one of the original event in Warzone before it was
 
 Warzone features 14 different vehicles across all game modes.
 
+- Vehicle | Seats | Maps
+- ATV | 1 Driver + 1 Passenger | All
+- SUV | 1 Driver + 3 Passengers | All
+- Heli | 1 Pilot + 4 Passengers | All
+- Cargo Truck | 1 Driver + Flat Bed | Verdansk Caldera
+- Armored Truck | 1 Driver + 1 Gunner + Flat Bed | All
+- Tac Rover | 1 Driver + 3 Passengers | All
+- Attack Helicopter | 1 Pilot + 1 Passenger + 2 Gunners | All
+- Dirt Bike | 1 Driver + 1 Passenger | All
+- Fighter Plane | 1 Driver + 1 Passenger | Caldera
+- Squad Transport | 1 Driver + 3 Passengers | Caldera
+- Utility Truck | 1 Driver + 1 Passenger + Flat Bed | Caldera
+- Anti Air Truck | 1 Driver + 1 Passenger + 1 Gunner | Caldera
+- Bomber Plane | 1 Driver + 3 Gunners | Caldera
+- Armored SUV | 1 Driver + 3 Passengers + 1 Gunner | Fortune's Keep Caldera
+
 #### Progression and Crossplay
 
 Warzone supports Crossplay across all platforms since its introduction in Call of Duty: Modern Warfare .
@@ -122,7 +138,7 @@ Call of Duty: Warzone also shares the same Store and Battle Pass system as Moder
 
 #### Battle Royale
 
-In Battle Royale, players fight to be the last team standing. Warzone was released with squads of three players but on March 17th, a solo mode was added to Battle Royale followed by a 4-player Quads mode on April 8th . In addition to the loot found on the map and dropped by eliminated players, players can collect Cash to buy equipment or killstreaks from Buy Stations. Squads can also take on Contracts to get loot and Cash.
+In Battle Royale, players fight to be the last team standing. Warzone was released with squads of three players but on March 17th, a solo mode was added to Battle Royale [ 11 ] followed by a 4-player Quads mode on April 8th [ 12 ] . In addition to the loot found on the map and dropped by eliminated players, players can collect Cash to buy equipment or killstreaks from Buy Stations. Squads can also take on Contracts to get loot and Cash.
 
 When a player is eliminated, they are sent to the Gulag where they will have to win the fight for a chance to being brought back into the match. When playing with a squad, the player who died during the fight can be redeployed by their teammates with either a Squad Buyback, which costs $4,000, or by completing a Most Wanted contract. A player who dies again after having won a Gulag fight dies again will need to be redeploy by their teammates. Players can also use a Self-Revive Kit to revive themselves when downed. These are available as loot and at Buy Stations for $4,000.
 
@@ -556,8 +572,8 @@ It included:
 
 ### Trivia
 
-- Development of Warzone started in 2017, under the name "Magma", after Infinity Ward and Raven Software witnessed the rise in popularity of PlayerUnknown's Battlegrounds . The mode was originally set in Kabul, Afghanistan before the studios settled with Verdansk .
-- Footage of Warzone was featured in the Modern Warfare reveal trailer released on May 30th, 2019.
+- Development of Warzone started in 2017, under the name "Magma", after Infinity Ward and Raven Software witnessed the rise in popularity of PlayerUnknown's Battlegrounds . The mode was originally set in Kabul, Afghanistan before the studios settled with Verdansk . [ 17 ]
+- Footage of Warzone was featured in the Modern Warfare reveal trailer released on May 30th, 2019. [ 18 ]
 - Call of Duty: Warzone was teased during the Season Two intro cutscene of Call of Duty: Modern Warfare . A "Classified" slide was added at the start of that season in the Modern Warfare 's main menu. On February 25, with Title Update 1.15, the slide was updated to display "Transmission Incoming" under "Classified". On March 9, after the announcement of Warzone , a 24 hour countdown timer was added to the slide. The slide displayed "Incoming Transmission" the next day before the release of Title Update 1.17 and Warzone .
 - The announcer for Warzone changed depending on the map and modes played in the game: At the launch of Warzone , "UK Team Leader" was the announcer for the Operators of the Coalition as well as the training and practice modes for the game while " Russian Team Leader " was the announcer for the Operators of the Allegiance . Following the integration of Call of Duty: Black Ops Cold War in December 2020, Kamarov's voice lines were removed from the game. With the release of the Season One of Call of Duty: Vanguard , Carver Butcher became the announcer for Vanguard operators while the "UK Team Leader" remained for Modern Warfare and Black Ops Cold War operators. Following the Season Two Reloaded update, the "UK Team Leader" was removed from the game, leaving Butcher as the sole announcer.
 

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "games"
 REQUEST_DELAY_SECONDS = 1.0
+MIN_USEFUL_BODY_CHARS = 200
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -45,7 +46,8 @@ NOISE_SELECTORS = [
     "div.catlinks",
     "div.wikia-gallery",
     "figure",
-    "sup.reference",
+    "div.redirectMsg",
+    "div.redirectText",
 ]
 
 # Elements that carry article content
@@ -177,6 +179,212 @@ SCRAPE_TARGETS: list[GameScrapeConfig] = [
             ),
         ],
     ),
+    GameScrapeConfig(
+        game="coc",
+        genre="strategy",
+        articles=[
+            ArticleSpec(
+                url="https://clashofclans.fandom.com/wiki/Town_Hall",
+                slug="town_hall_guide",
+                topic="town_hall",
+                weakness_category="resource_management",
+                skill_level="beginner",
+                mode="multiplayer",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://clashofclans.fandom.com/wiki/Layouts",
+                slug="base_layouts",
+                topic="base_layout",
+                weakness_category="base_layout",
+                skill_level="intermediate",
+                mode="multiplayer",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://clashofclans.fandom.com/wiki/Attack_Strategies",
+                slug="attack_strategies",
+                topic="attacking",
+                weakness_category="troop_deployment",
+                skill_level="intermediate",
+                mode="multiplayer",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://clashofclans.fandom.com/wiki/Clan_Wars",
+                slug="clan_wars",
+                topic="clan_wars",
+                weakness_category="timing",
+                skill_level="intermediate",
+                mode="clan_wars",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://clashofclans.fandom.com/wiki/Heroes",
+                slug="heroes_guide",
+                topic="heroes",
+                weakness_category="troop_deployment",
+                skill_level="beginner",
+                mode="multiplayer",
+                experience_level="new",
+            ),
+        ],
+    ),
+    GameScrapeConfig(
+        game="cr",
+        genre="strategy",
+        articles=[
+            ArticleSpec(
+                url="https://clashroyale.fandom.com/wiki/Elixir",
+                slug="elixir_management",
+                topic="elixir",
+                weakness_category="timing",
+                skill_level="beginner",
+                mode="ranked",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://clashroyale.fandom.com/wiki/Battle_Deck",
+                slug="battle_deck",
+                topic="decks",
+                weakness_category="deck_building",
+                skill_level="intermediate",
+                mode="ranked",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://clashroyale.fandom.com/wiki/Cards",
+                slug="cards_overview",
+                topic="cards",
+                weakness_category="deck_building",
+                skill_level="beginner",
+                mode="ranked",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://clashroyale.fandom.com/wiki/Arenas",
+                slug="arenas_progression",
+                topic="arenas",
+                weakness_category="resource_management",
+                skill_level="beginner",
+                mode="ladder",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://clashroyale.fandom.com/wiki/Trophies",
+                slug="trophies_guide",
+                topic="trophies",
+                weakness_category="timing",
+                skill_level="intermediate",
+                mode="ranked",
+                experience_level="intermediate",
+            ),
+        ],
+    ),
+    GameScrapeConfig(
+        game="rdr2",
+        genre="open_world",
+        articles=[
+            ArticleSpec(
+                url="https://reddead.fandom.com/wiki/Red_Dead_Online",
+                slug="rdo_overview",
+                topic="online_basics",
+                weakness_category="progression",
+                skill_level="beginner",
+                mode="online",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://reddead.fandom.com/wiki/Weapons",
+                slug="weapons_guide",
+                topic="weapons",
+                weakness_category="combat",
+                skill_level="intermediate",
+                mode="story",
+                experience_level="intermediate",
+                weapon_class="any",
+            ),
+            ArticleSpec(
+                url="https://reddead.fandom.com/wiki/Hunting",
+                slug="hunting_guide",
+                topic="hunting",
+                weakness_category="money_making",
+                skill_level="beginner",
+                mode="story",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://reddead.fandom.com/wiki/Honor",
+                slug="honor_system",
+                topic="honor",
+                weakness_category="mission_strategy",
+                skill_level="intermediate",
+                mode="story",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://reddead.fandom.com/wiki/Money",
+                slug="money_guide",
+                topic="money",
+                weakness_category="money_making",
+                skill_level="beginner",
+                mode="story",
+                experience_level="new",
+            ),
+        ],
+    ),
+    GameScrapeConfig(
+        game="free_fire",
+        genre="shooter",
+        articles=[
+            ArticleSpec(
+                url="https://freefire.fandom.com/wiki/Free_Fire",
+                slug="free_fire_overview",
+                topic="basics",
+                weakness_category="game_sense",
+                skill_level="beginner",
+                mode="battle_royale",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://freefire.fandom.com/wiki/Weapons",
+                slug="weapons_guide",
+                topic="weapons",
+                weakness_category="loadout",
+                skill_level="intermediate",
+                mode="classic",
+                experience_level="intermediate",
+                weapon_class="any",
+            ),
+            ArticleSpec(
+                url="https://freefire.fandom.com/wiki/Characters",
+                slug="characters_guide",
+                topic="characters",
+                weakness_category="loadout",
+                skill_level="beginner",
+                mode="classic",
+                experience_level="new",
+            ),
+            ArticleSpec(
+                url="https://freefire.fandom.com/wiki/Maps",
+                slug="maps_guide",
+                topic="maps",
+                weakness_category="positioning",
+                skill_level="intermediate",
+                mode="battle_royale",
+                experience_level="intermediate",
+            ),
+            ArticleSpec(
+                url="https://freefire.fandom.com/wiki/Alok",
+                slug="alok_character",
+                topic="characters",
+                weakness_category="loadout",
+                skill_level="beginner",
+                mode="classic",
+                experience_level="new",
+            ),
+        ],
+    ),
 ]
 
 
@@ -197,6 +405,7 @@ def fetch_page(url: str) -> str:
             "page": page_name,
             "format": "json",
             "prop": "text",
+            "redirects": "true",
             "disableeditsection": "true",
         },
         headers=DEFAULT_HEADERS,
@@ -206,7 +415,15 @@ def fetch_page(url: str) -> str:
     payload = response.json()
     if "error" in payload:
         raise ValueError(payload["error"].get("info", "MediaWiki API error"))
-    return payload["parse"]["text"]["*"]
+    parsed = payload["parse"]
+    if parsed.get("redirects"):
+        redirect = parsed["redirects"][0]
+        logger.info(
+            "Followed redirect: %s -> %s",
+            redirect.get("from"),
+            redirect.get("to"),
+        )
+    return parsed["text"]["*"]
 
 
 def _find_content_root(soup: BeautifulSoup) -> Tag:
@@ -237,6 +454,23 @@ def _clean_text(text: str) -> str:
     return text
 
 
+def _table_to_markdown(tag: Tag, max_rows: int = 40) -> str:
+    """Convert an HTML table into readable markdown bullet rows."""
+    lines: list[str] = []
+    for tr in tag.find_all("tr"):
+        cells = [
+            _clean_text(cell.get_text(" ", strip=True))
+            for cell in tr.find_all(["th", "td"])
+        ]
+        cells = [cell for cell in cells if cell]
+        if cells:
+            lines.append(f"- {' | '.join(cells)}")
+        if len(lines) >= max_rows:
+            lines.append("- ...")
+            break
+    return "\n".join(lines)
+
+
 def _tag_to_markdown(tag: Tag) -> str:
     if tag.name in {"h2", "h3", "h4"}:
         level = _heading_level(tag.name)
@@ -258,6 +492,9 @@ def _tag_to_markdown(tag: Tag) -> str:
                 lines.append(f"- {item_text}")
         return "\n".join(lines)
 
+    if tag.name == "table":
+        return _table_to_markdown(tag)
+
     return ""
 
 
@@ -270,7 +507,7 @@ def extract_markdown_body(html: str, fallback_title: str) -> tuple[str, str]:
     _strip_noise(root)
 
     blocks: list[str] = []
-    for child in root.find_all(["h2", "h3", "h4", "p", "ul", "ol"]):
+    for child in root.find_all(["h2", "h3", "h4", "p", "ul", "ol", "table"]):
         block = _tag_to_markdown(child)
         if block:
             blocks.append(block)
@@ -278,6 +515,8 @@ def extract_markdown_body(html: str, fallback_title: str) -> tuple[str, str]:
     body = "\n\n".join(blocks).strip()
     if not body:
         raise ValueError("No usable article text after cleanup")
+    if body.lower().startswith("redirect to:") and len(body) < MIN_USEFUL_BODY_CHARS:
+        raise ValueError("Page is still a redirect stub after API fetch")
 
     return title, body
 
@@ -349,8 +588,12 @@ def scrape_games(game_names: list[str] | None = None) -> dict[str, int]:
 
 
 def main() -> None:
+    import sys
+
     logging.basicConfig(level=logging.INFO)
-    scrape_games(["gta_v_online", "cod"])
+    all_games = ["gta_v_online", "cod", "coc", "cr", "rdr2", "free_fire"]
+    game_names = sys.argv[1:] if len(sys.argv) > 1 else all_games
+    scrape_games(game_names)
 
 
 if __name__ == "__main__":
