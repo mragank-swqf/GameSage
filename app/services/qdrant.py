@@ -12,7 +12,7 @@ from qdrant_client.http import models as qmodels
 logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "game_strategies"
-VECTOR_SIZE = 768  # Gemini text-embedding-004
+VECTOR_SIZE = 768  # gemini-embedding-001 with output_dimensionality=768
 DISTANCE = qmodels.Distance.COSINE
 
 PAYLOAD_INDEX_FIELDS = (
