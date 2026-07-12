@@ -11,11 +11,18 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from app.agent.taxonomy import map_topic_to_weakness
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +204,9 @@ def chunk_file(path: Path) -> list[Chunk]:
     frontmatter, body = parse_markdown_file(path)
     game = str(frontmatter.get("game", path.parent.name))
     slug = path.stem
+    topic = str(frontmatter.get("topic", ""))
+    mapped = map_topic_to_weakness(topic, game=game)
+    weakness = mapped or str(frontmatter.get("weakness_category", ""))
 
     sections = split_into_sections(body)
     sections = merge_small_sections(sections)
@@ -215,8 +225,8 @@ def chunk_file(path: Path) -> list[Chunk]:
                     game=game,
                     genre=str(frontmatter.get("genre", "")),
                     mode=str(frontmatter.get("mode", "")),
-                    topic=str(frontmatter.get("topic", "")),
-                    weakness_category=str(frontmatter.get("weakness_category", "")),
+                    topic=topic,
+                    weakness_category=weakness,
                     skill_level=str(frontmatter.get("skill_level", "")),
                     weapon_class=str(frontmatter.get("weapon_class", "any")),
                     experience_level=str(frontmatter.get("experience_level", "")),
@@ -260,10 +270,10 @@ def write_chunks(chunks: list[Chunk], output_path: Path = OUTPUT_PATH) -> None:
 
 
 def main() -> None:
-    import sys
+    import sys as _sys
 
     logging.basicConfig(level=logging.INFO)
-    game_names = sys.argv[1:] or None
+    game_names = _sys.argv[1:] or None
     chunks = chunk_corpus(game_names)
     write_chunks(chunks)
 
