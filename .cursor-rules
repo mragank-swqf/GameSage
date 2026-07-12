@@ -104,8 +104,11 @@ requirements.txt
 # ═══════════════════════════════════════════════════════════
 # = GEMINI API =
 # ═══════════════════════════════════════════════════════════
-- Embeddings model: models/text-embedding-004 (768-dim output)
-- Generation model: gemini-1.5-flash (fast, sufficient for coaching plans)
+- Embeddings model: models/text-embedding-004 (768-dim output) — Gemini only, never swap
+- Generation model: models/gemini-2.5-flash-lite (free tier: ~10 RPM / 250k TPM)
+- Why this model: enough headroom for assess pipeline (2 LLM calls per request), solid structured JSON, free-tier friendly
+- Fallback if JSON quality is weak during Day 5–7: models/gemini-2.5-flash (~5 RPM) — better quality, tighter rate limit
+- Do NOT use Groq for this project — embeddings stay on Gemini (768-dim contract), one provider keeps the interview story clean
 - API key from env: GEMINI_API_KEY
 - embed_text(text: str) → List[float] lives in services/gemini.py
 - generate(prompt: str) → str lives in services/gemini.py
