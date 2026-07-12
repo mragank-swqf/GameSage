@@ -67,6 +67,87 @@ def ensure_collection(client: QdrantClient | None = None) -> None:
             logger.info("Payload index %s — %s", field, exc)
 
 
+def build_filter(
+    *,
+    game: str | None = None,
+    weakness_category: str | None = None,
+    skill_level: str | None = None,
+    experience_level: str | None = None,
+    weapon_class: str | None = None,
+) -> qmodels.Filter | None:
+    """Build a Qdrant payload filter. game should almost always be set."""
+    must: list[qmodels.FieldCondition] = []
+    fields = {
+        "game": game,
+        "weakness_category": weakness_category,
+        "skill_level": skill_level,
+        "experience_level": experience_level,
+        "weapon_class": weapon_class,
+    }
+    for key, value in fields.items():
+        if value:
+            must.append(
+                qmodels.FieldCondition(
+                    key=key,
+                    match=qmodels.MatchValue(value=value),
+                )
+            )
+    if not must:
+        return None
+    return qmodels.Filter(must=must)
+
+
+def search(
+    query_vector: list[float],
+    *,
+    game: str,
+    weakness_category: str | None = None,
+    skill_level: str | None = None,
+    experience_level: str | None = None,
+    weapon_class: str | None = None,
+    limit: int = 5,
+    client: QdrantClient | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Vector search with required game filter (+ optional metadata filters).
+
+    Returns list of {chunk_id, score, content, ...payload}.
+    """
+    client = client or get_qdrant_client()
+    query_filter = build_filter(
+        game=game,
+        weakness_category=weakness_category,
+        skill_level=skill_level,
+        experience_level=experience_level,
+        weapon_class=weapon_class,
+    )
+
+    response = client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_vector,
+        query_filter=query_filter,
+        limit=limit,
+        with_payload=True,
+    )
+
+    hits: list[dict[str, Any]] = []
+    for point in response.points:
+        payload = point.payload or {}
+        hits.append(
+            {
+                "chunk_id": payload.get("chunk_id"),
+                "score": point.score,
+                "game": payload.get("game"),
+                "weakness_category": payload.get("weakness_category"),
+                "skill_level": payload.get("skill_level"),
+                "topic": payload.get("topic"),
+                "heading": payload.get("heading"),
+                "content_preview": (payload.get("content") or "")[:180],
+            }
+        )
+    return hits
+
+
 def collection_info(client: QdrantClient | None = None) -> dict[str, Any]:
     """Return basic collection stats for sanity checks."""
     client = client or get_qdrant_client()
