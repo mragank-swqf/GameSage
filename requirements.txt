@@ -14,9 +14,10 @@ google-generativeai>=0.8.0  # legacy; prefer google-genai in app/services/gemini
 
 # HTTP clients + validation
 httpx>=0.26.0
-pydantic>=2.5.0
+pydantic[email]>=2.5.0
 pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
+email-validator>=2.1.0
 
 # Data pipeline (scraper, corpus frontmatter)
 beautifulsoup4>=4.12.0
