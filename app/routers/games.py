@@ -8,8 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Game
 from app.db.session import get_db
-from app.schemas.game_schemas import GameResponse, GameTopicsResponse
-from app.services import qdrant as qdrant_service
+from app.schemas.game_schemas import (
+    CocPlayerResponse,
+    GameResponse,
+    GameTopicsResponse,
+)
+from app.services import coc_api, qdrant as qdrant_service
+from app.services.coc_api import CocApiError
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +32,28 @@ async def list_games(db: AsyncSession = Depends(get_db)) -> list[Game]:
     games = list(result.scalars().all())
     logger.info("Listed %d games", len(games))
     return games
+
+
+@router.get(
+    "/games/coc/player/{player_tag}",
+    response_model=CocPlayerResponse,
+    description=(
+        "Fetch live Clash of Clans player data by tag "
+        "(town hall, trophies, war stars, heroes). "
+        "Pass tag without #, e.g. ABC123XYZ — or URL-encoded %23ABC123XYZ."
+    ),
+    response_description="Mapped CoC player snapshot from the official API.",
+)
+async def get_coc_player(player_tag: str) -> CocPlayerResponse:
+    try:
+        data = await coc_api.get_player(player_tag)
+    except CocApiError as exc:
+        raise HTTPException(
+            status_code=exc.status_code or status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from None
+
+    return CocPlayerResponse.model_validate(data)
 
 
 @router.get(
