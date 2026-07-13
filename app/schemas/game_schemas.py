@@ -43,3 +43,30 @@ class CocPlayerResponse(BaseModel):
     exp_level: Optional[int] = None
     heroes: list[CocHeroResponse] = Field(default_factory=list)
     source: str = "live_api"
+
+
+class CrArenaResponse(BaseModel):
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+
+class CrDeckCardResponse(BaseModel):
+    name: Optional[str] = None
+    level: Optional[int] = None
+    max_level: Optional[int] = None
+    elixir_cost: Optional[int] = None
+
+
+class CrPlayerResponse(BaseModel):
+    tag: Optional[str] = None
+    name: Optional[str] = None
+    trophies: Optional[int] = None
+    best_trophies: Optional[int] = None
+    exp_level: Optional[int] = None
+    arena: Optional[CrArenaResponse] = None
+    wins: Optional[int] = None
+    losses: Optional[int] = None
+    win_rate: Optional[float] = None
+    favourite_card: Optional[str] = None
+    current_deck: list[CrDeckCardResponse] = Field(default_factory=list)
+    source: str = "live_api"

@@ -10,11 +10,13 @@ from app.db.models import Game
 from app.db.session import get_db
 from app.schemas.game_schemas import (
     CocPlayerResponse,
+    CrPlayerResponse,
     GameResponse,
     GameTopicsResponse,
 )
-from app.services import coc_api, qdrant as qdrant_service
+from app.services import coc_api, cr_api, qdrant as qdrant_service
 from app.services.coc_api import CocApiError
+from app.services.cr_api import CrApiError
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,28 @@ async def get_coc_player(player_tag: str) -> CocPlayerResponse:
         ) from None
 
     return CocPlayerResponse.model_validate(data)
+
+
+@router.get(
+    "/games/cr/player/{player_tag}",
+    response_model=CrPlayerResponse,
+    description=(
+        "Fetch live Clash Royale player data by tag "
+        "(trophies, arena, win rate, favourite card, current deck). "
+        "Pass tag without #, e.g. ABC123XYZ."
+    ),
+    response_description="Mapped Clash Royale player snapshot from the official API.",
+)
+async def get_cr_player(player_tag: str) -> CrPlayerResponse:
+    try:
+        data = await cr_api.get_player(player_tag)
+    except CrApiError as exc:
+        raise HTTPException(
+            status_code=exc.status_code or status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from None
+
+    return CrPlayerResponse.model_validate(data)
 
 
 @router.get(
