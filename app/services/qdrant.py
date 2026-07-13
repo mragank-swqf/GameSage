@@ -161,6 +161,36 @@ def collection_info(client: QdrantClient | None = None) -> dict[str, Any]:
     }
 
 
+def list_weakness_categories_for_game(
+    game: str,
+    client: QdrantClient | None = None,
+) -> list[str]:
+    """Return sorted unique weakness_category values stored for a game in Qdrant."""
+    client = client or get_qdrant_client()
+    query_filter = build_filter(game=game)
+    categories: set[str] = set()
+    offset: Any = None
+
+    while True:
+        points, next_offset = client.scroll(
+            collection_name=COLLECTION_NAME,
+            scroll_filter=query_filter,
+            limit=128,
+            offset=offset,
+            with_payload=["weakness_category"],
+            with_vectors=False,
+        )
+        for point in points:
+            value = (point.payload or {}).get("weakness_category")
+            if value:
+                categories.add(str(value))
+        if next_offset is None:
+            break
+        offset = next_offset
+
+    return sorted(categories)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     from dotenv import load_dotenv
