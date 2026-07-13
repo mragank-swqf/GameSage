@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from sqlalchemy import select
 
 from app.db.session import async_session_factory, close_db, verify_db_connection
-from app.routers import games, users
+from app.routers import games, players, users
 from app.schemas.health_schemas import HealthResponse
 
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +35,7 @@ app = FastAPI(
 
 app.include_router(users.router)
 app.include_router(games.router)
+app.include_router(players.router)
 
 
 @app.get(
