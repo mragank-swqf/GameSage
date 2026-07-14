@@ -8,8 +8,10 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from qdrant_client import QdrantClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.assessor import AssessmentResult
+from app.db.models import CoachingPlan
 from app.services import gemini, qdrant as qdrant_service
 
 logger = logging.getLogger(__name__)
@@ -151,3 +153,43 @@ def retrieve(
         elapsed_ms,
     )
     return merged
+
+
+def chunk_ids_for_audit(chunks: list[ChunkResult]) -> list[str]:
+    """
+    Extract ordered chunk_ids for the plan audit trail.
+
+    Same order as the merged retrieval list (best score first).
+    """
+    return [c.chunk_id for c in chunks]
+
+
+async def store_chunk_audit_trail(
+    db: AsyncSession,
+    plan_id: int,
+    chunks: list[ChunkResult],
+) -> list[str]:
+    """
+    Persist retrieved chunk_ids onto coaching_plans.retrieved_chunk_ids.
+
+    Takes: DB session, existing plan row id, ChunkResult list from retrieve().
+    Returns: the id list that was saved.
+    Calls: Postgres update on coaching_plans.
+
+    Day 7 planner will call this right after creating/saving a mastery plan
+    so every recommendation is traceable back to grounding chunks.
+    """
+    plan = await db.get(CoachingPlan, plan_id)
+    if plan is None:
+        raise ValueError(f"Coaching plan {plan_id} not found")
+
+    chunk_ids = chunk_ids_for_audit(chunks)
+    plan.retrieved_chunk_ids = chunk_ids
+    await db.commit()
+    await db.refresh(plan)
+    logger.info(
+        "Stored audit trail plan_id=%s chunk_ids=%d",
+        plan_id,
+        len(chunk_ids),
+    )
+    return chunk_ids

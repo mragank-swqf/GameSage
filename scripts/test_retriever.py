@@ -93,7 +93,17 @@ def main() -> None:
         }
         for c in chunks
     ]
-    print(json.dumps({"game": args.game, "count": len(chunks), "chunks": printable}, indent=2))
+    print(
+        json.dumps(
+            {
+                "game": args.game,
+                "count": len(chunks),
+                "audit_trail_chunk_ids": [c.chunk_id for c in chunks],
+                "chunks": printable,
+            },
+            indent=2,
+        )
+    )
 
     bad_game = [c for c in chunks if c.game and c.game != args.game]
     bad_weak = [
