@@ -1,10 +1,12 @@
 """Manual sanity check for Step 1 assemble_context.
 
-Usage (Postgres reachable on localhost:5432):
+Prefer running inside the API container (correct Docker DNS + password):
 
-  python scripts/test_assembler.py --user-id 1 --game-id 4 --player-tag P28jpgrlj
+  docker compose exec api python scripts/test_assembler.py --user-id 1 --game-id 4 --player-tag P28jpgrlj
 
-Expects user + player_stats (and ideally profile) to already exist.
+From the host (only if port 5432 is Docker's Postgres, password gamesage):
+
+  .\\.venv\\Scripts\\python.exe scripts/test_assembler.py --user-id 1 --game-id 4 --player-tag P28jpgrlj
 """
 
 from __future__ import annotations
@@ -27,6 +29,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def resolve_db_url() -> str:
+    """
+    Inside Docker: keep host `postgres` (compose network).
+    On the host machine: talk to published port via localhost.
+    """
+    db_url = os.getenv(
+        "POSTGRES_URL",
+        "postgresql+asyncpg://gamesage:gamesage@localhost:5432/gamesage",
+    )
+    in_docker = os.path.exists("/.dockerenv")
+    if in_docker:
+        return db_url
+    if "@postgres:" in db_url:
+        logger.info("Host run — using localhost instead of Docker hostname postgres")
+        return db_url.replace("@postgres:", "@localhost:")
+    return db_url
+
+
 async def main() -> None:
     load_dotenv()
     parser = argparse.ArgumentParser(description="Test assemble_context")
@@ -35,13 +55,7 @@ async def main() -> None:
     parser.add_argument("--player-tag", type=str, default=None)
     args = parser.parse_args()
 
-    db_url = os.getenv(
-        "POSTGRES_URL",
-        "postgresql+asyncpg://gamesage:gamesage@localhost:5432/gamesage",
-    )
-    if "@postgres:" in db_url:
-        db_url = db_url.replace("@postgres:", "@localhost:")
-
+    db_url = resolve_db_url()
     engine = create_async_engine(db_url, echo=False)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

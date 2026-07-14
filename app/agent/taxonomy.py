@@ -85,6 +85,11 @@ TOPIC_TO_WEAKNESS_BY_GENRE: dict[str, dict[str, str]] = {
 }
 
 
+def get_genre_for_game(game: str) -> str | None:
+    """Return genre for a game name, or None if unknown."""
+    return GAME_GENRE.get(game)
+
+
 def get_weaknesses_for_genre(genre: str) -> list[str]:
     """Return allowed weakness labels for a genre."""
     return list(WEAKNESS_CATEGORIES.get(genre, []))
@@ -94,6 +99,15 @@ def get_weaknesses_for_game(game: str) -> list[str]:
     """Return allowed weakness labels for a game name."""
     genre = GAME_GENRE.get(game, "")
     return get_weaknesses_for_genre(genre)
+
+
+def format_weaknesses_for_prompt(game: str) -> str:
+    """
+    Comma-separated allowed labels for the assessor prompt.
+
+    Example (coc): "deck_building, resource_management, base_layout, ..."
+    """
+    return ", ".join(get_weaknesses_for_game(game))
 
 
 def map_topic_to_weakness(topic: str, game: str = "") -> str | None:
@@ -113,3 +127,21 @@ def map_topic_to_weakness(topic: str, game: str = "") -> str | None:
 def is_valid_weakness(game: str, weakness: str) -> bool:
     """True if weakness is in the allowed taxonomy for this game."""
     return weakness in get_weaknesses_for_game(game)
+
+
+def filter_valid_weaknesses(game: str, weaknesses: list[str]) -> list[str]:
+    """
+    Keep only taxonomy-valid labels from an LLM (or user) list.
+
+    Drops unknowns, trims whitespace, de-dupes while preserving order.
+    Used after the assessor JSON parse before Step 3 retrieval.
+    """
+    allowed = set(get_weaknesses_for_game(game))
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for raw in weaknesses:
+        label = raw.strip().lower()
+        if label in allowed and label not in seen:
+            seen.add(label)
+            cleaned.append(label)
+    return cleaned
