@@ -133,6 +133,7 @@ def search(
     hits: list[dict[str, Any]] = []
     for point in response.points:
         payload = point.payload or {}
+        content = payload.get("content") or ""
         hits.append(
             {
                 "chunk_id": payload.get("chunk_id"),
@@ -140,9 +141,11 @@ def search(
                 "game": payload.get("game"),
                 "weakness_category": payload.get("weakness_category"),
                 "skill_level": payload.get("skill_level"),
+                "experience_level": payload.get("experience_level"),
                 "topic": payload.get("topic"),
                 "heading": payload.get("heading"),
-                "content_preview": (payload.get("content") or "")[:180],
+                "content": content,
+                "content_preview": content[:180],
             }
         )
     return hits
