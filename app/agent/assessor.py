@@ -11,6 +11,10 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.assessment_prompt import (
+    ASSESSMENT_EXAMPLE_JSON,
+    ASSESSMENT_PROMPT_TEMPLATE,
+)
 from app.agent.taxonomy import (
     filter_valid_weaknesses,
     format_weaknesses_for_prompt,
@@ -57,18 +61,15 @@ def _strip_fences(text: str) -> str:
 
 def build_assessment_prompt(context: dict[str, Any]) -> str:
     """
-    Build the assessor prompt from player context + allowed weakness labels.
+    Fill the Feature-4 assessment template with player context + taxonomy.
 
     Takes: unified context from assemble_context.
     Returns: prompt string for gemini.generate.
-    Calls: nothing external (pure string build).
+    Calls: taxonomy.format_weaknesses_for_prompt (no LLM).
     """
     game = context.get("game") or {}
     game_name = game.get("name") or ""
-    allowed = format_weaknesses_for_prompt(game_name)
-    tiers = ", ".join(ALLOWED_SKILL_TIERS)
 
-    # Compact context for the model (avoid dumping huge hero lists raw)
     slim = {
         "game": game,
         "profile": context.get("profile"),
@@ -76,25 +77,12 @@ def build_assessment_prompt(context: dict[str, Any]) -> str:
         "live": context.get("live"),
         "source": context.get("source"),
     }
-    context_json = json.dumps(slim, indent=2, default=str)
-
-    return f"""You are GameSage's skill assessment engine for a game mastery agent.
-Given the player's context, identify their main skill weaknesses.
-
-RULES:
-- Pick weakness labels ONLY from this allowed list for this game: {allowed}
-- Pick skill_tier ONLY from: {tiers}
-- priority_focus must be exactly one of the weaknesses you listed
-- Prefer 2 weaknesses (minimum 1, maximum 3)
-- Use live API data when present (e.g. trophies, town hall, heroes) plus goals/known_weaknesses
-- Return ONLY valid JSON, no preamble, no markdown fences
-
-PLAYER CONTEXT:
-{context_json}
-
-Example output shape:
-{{"weaknesses":["troop_deployment","base_layout"],"skill_tier":"advanced","priority_focus":"troop_deployment"}}
-"""
+    return ASSESSMENT_PROMPT_TEMPLATE.format(
+        allowed_weaknesses=format_weaknesses_for_prompt(game_name),
+        skill_tiers=", ".join(ALLOWED_SKILL_TIERS),
+        player_context_json=json.dumps(slim, indent=2, default=str),
+        example_json=ASSESSMENT_EXAMPLE_JSON,
+    )
 
 
 def _parse_assessment(raw: str, game_name: str) -> AssessmentResult:
