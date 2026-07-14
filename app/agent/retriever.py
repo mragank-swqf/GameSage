@@ -15,6 +15,7 @@ from app.services import gemini, qdrant as qdrant_service
 logger = logging.getLogger(__name__)
 
 CHUNKS_PER_WEAKNESS = 5
+MAX_CHUNKS = 15  # planner context budget — never send more than this
 
 
 @dataclass
@@ -46,6 +47,36 @@ def _query_text(game_name: str, weakness: str) -> str:
     return f"{game_name} gameplay strategy to improve {readable}"
 
 
+def merge_and_dedupe_chunks(
+    chunks: list[ChunkResult],
+    *,
+    max_chunks: int = MAX_CHUNKS,
+) -> list[ChunkResult]:
+    """
+    Merge per-weakness hits: keep best score per chunk_id, sort desc, cap length.
+
+    Takes: flat list from one-or-more weakness searches.
+    Returns: deduped, score-sorted list with at most max_chunks items.
+    Calls: nothing external.
+    """
+    best_by_id: dict[str, ChunkResult] = {}
+    for chunk in chunks:
+        existing = best_by_id.get(chunk.chunk_id)
+        if existing is None or chunk.score > existing.score:
+            best_by_id[chunk.chunk_id] = chunk
+
+    merged = sorted(best_by_id.values(), key=lambda c: c.score, reverse=True)
+    capped = merged[:max_chunks]
+    logger.info(
+        "Merge/dedupe: in=%d unique=%d out=%d (cap=%d)",
+        len(chunks),
+        len(merged),
+        len(capped),
+        max_chunks,
+    )
+    return capped
+
+
 def retrieve(
     assessment: AssessmentResult,
     context: dict[str, Any],
@@ -55,7 +86,7 @@ def retrieve(
     Run weakness-conditioned retrieval for each assessed weakness.
 
     Takes: AssessmentResult from Step 2, player context from Step 1, optional Qdrant client.
-    Returns: concatenated ChunkResult list (top 5 per weakness; merge/dedupe is Feature 2).
+    Returns: deduped, score-sorted ChunkResult list capped at MAX_CHUNKS.
     Calls: gemini.embed_text (query vector), qdrant.search (filtered ANN).
     """
     game = context.get("game") or {}
@@ -110,12 +141,13 @@ def retrieve(
                 )
             )
 
+    merged = merge_and_dedupe_chunks(results)
     elapsed_ms = (time.perf_counter() - started) * 1000
     logger.info(
         "Retrieval done game=%s weaknesses=%d chunks=%d (%.0fms)",
         game_name,
         len(assessment.weaknesses),
-        len(results),
+        len(merged),
         elapsed_ms,
     )
-    return results
+    return merged

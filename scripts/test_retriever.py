@@ -107,10 +107,27 @@ def main() -> None:
     if bad_weak:
         logger.error("WEAKNESS MISMATCH in %d hits", len(bad_weak))
         sys.exit(1)
+
+    ids = [c.chunk_id for c in chunks]
+    if len(ids) != len(set(ids)):
+        logger.error("DUPLICATE chunk_ids after merge")
+        sys.exit(1)
+    if len(chunks) > 15:
+        logger.error("Cap broken: got %d chunks (max 15)", len(chunks))
+        sys.exit(1)
+    if len(chunks) >= 2:
+        scores = [c.score for c in chunks]
+        if scores != sorted(scores, reverse=True):
+            logger.error("Chunks not sorted by score descending")
+            sys.exit(1)
+
     if not chunks:
         logger.warning("0 chunks — filters may be too tight for this corpus tier")
     else:
-        logger.info("OK — %d chunks, game+weakness filters look sane", len(chunks))
+        logger.info(
+            "OK — %d unique chunks, sorted, capped, game+weakness filters sane",
+            len(chunks),
+        )
 
 
 if __name__ == "__main__":
