@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Embedding model (API no longer serves text-embedding-004 on free tier)
 EMBEDDING_MODEL = "gemini-embedding-001"
-GENERATION_MODEL = "gemini-2.5-flash-lite"
+GENERATION_MODEL = "gemini-3.1-flash-lite"
 EMBED_BATCH_DELAY_SECONDS = 0.1  # 100ms between embedding calls
 EXPECTED_DIM = 768
 

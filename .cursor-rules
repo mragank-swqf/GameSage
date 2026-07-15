@@ -104,11 +104,18 @@ requirements.txt
 # ═══════════════════════════════════════════════════════════
 # = GEMINI API =
 # ═══════════════════════════════════════════════════════════
-- Embeddings model: gemini-embedding-001 with output_dimensionality=768 (replaces deprecated text-embedding-004 on current API)
-- Generation model: gemini-2.5-flash-lite (free tier: ~10 RPM / 250k TPM)
-- Why this model: enough headroom for assess pipeline (2 LLM calls per request), solid structured JSON, free-tier friendly
-- Fallback if JSON quality is weak during Day 5–7: gemini-2.5-flash (~5 RPM) — better quality, tighter rate limit
-- Do NOT use Groq for this project — embeddings stay on Gemini (768-dim contract), one provider keeps the interview story clean
+- Embeddings (primary): gemini-embedding-001 @ output_dimensionality=768
+- Embeddings (alt if 001 TPM exhausted): gemini-embedding-2 (also free — verify dims before swapping Qdrant)
+- Do NOT burn embedding-001 TPM on casual smoke tests when near limit
+- Generation candidates (free tier the owner can use — test in this order when capacity is tight):
+    1. gemini-2.5-flash-lite
+    2. gemini-2.5-flash
+    3. gemini-3-flash-preview   # "3 flash"
+    4. gemini-3.1-flash-lite
+    5. gemini-3.5-flash
+- Current default GENERATION_MODEL in gemini.py: gemini-3.1-flash-lite (2.5-flash-lite often 503 under load)
+- Prefer staying on Gemini for this portfolio; Grok only if ALL five generation free models fail
+- CoC/CR live API: skip in routine testing if key IP allowlist is painful — assembler soft-skips live merge
 - SDK: google-genai (Client API) — not the deprecated google.generativeai package for new code
 - API key from env: GEMINI_API_KEY
 - embed_text(text: str) → List[float] lives in services/gemini.py

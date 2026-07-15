@@ -202,7 +202,7 @@ async def assess(
                 elapsed_ms,
             )
             return result
-        except (json.JSONDecodeError, ValueError, RuntimeError) as exc:
+        except Exception as exc:  # includes Gemini 503 ServerError, parse errors
             last_error = exc
             logger.warning(
                 "Assessment parse/generate failed attempt=%s: %s", attempt, exc

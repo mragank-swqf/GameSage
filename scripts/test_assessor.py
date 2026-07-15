@@ -1,6 +1,9 @@
 """Manual sanity check for Step 2 assess(context).
 
-  docker compose exec api python scripts/test_assessor.py --user-id 1 --game-id 4 --player-tag P28jpgrlj
+Skip CoC/CR live by default. Pass --live to enable (needs working IP allowlist key).
+
+  docker compose exec api python scripts/test_assessor.py --user-id 1 --game-id 4
+  docker compose exec api python scripts/test_assessor.py --user-id 1 --game-id 4 --live
 """
 
 from __future__ import annotations
@@ -42,6 +45,11 @@ async def main() -> None:
     parser.add_argument("--user-id", type=int, required=True)
     parser.add_argument("--game-id", type=int, required=True)
     parser.add_argument("--player-tag", type=str, default=None)
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Allow CoC/CR live API merge (default: skip)",
+    )
     args = parser.parse_args()
 
     engine = create_async_engine(resolve_db_url(), echo=False)
@@ -50,7 +58,11 @@ async def main() -> None:
     try:
         async with factory() as db:
             context = await assemble_context(
-                args.user_id, args.game_id, db, player_tag=args.player_tag
+                args.user_id,
+                args.game_id,
+                db,
+                player_tag=args.player_tag,
+                skip_live=not args.live,
             )
             result = await assess(context, db)
         print(json.dumps(result.to_dict(), indent=2))

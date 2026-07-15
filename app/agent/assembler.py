@@ -97,13 +97,15 @@ async def assemble_context(
     db: AsyncSession,
     *,
     player_tag: str | None = None,
+    skip_live: bool = False,
 ) -> dict[str, Any]:
     """
     Build the unified player context dict used by every later agent step.
 
     Takes: user_id, game_id, async DB session, optional live player_tag.
     Returns: dict with game, profile, stats, live (optional), source.
-    Calls: Postgres (always); CoC/CR HTTP clients when has_live_api and a tag exist.
+    Calls: Postgres (always); CoC/CR HTTP clients when has_live_api and a tag exist
+           (unless skip_live=True).
 
     Raises AssemblerError if the game is missing or no player_stats row exists.
     """
@@ -148,7 +150,7 @@ async def assemble_context(
     live_payload: dict[str, Any] | None = None
     source = "user_submitted"
 
-    if game.has_live_api:
+    if game.has_live_api and not skip_live:
         notes = profile.notes if profile else None
         tag = extract_player_tag(notes, player_tag)
         if tag:
@@ -161,6 +163,8 @@ async def assemble_context(
                 "(pass player_tag= or put #TAG in profile notes)",
                 game.name,
             )
+    elif skip_live and game.has_live_api:
+        logger.info("Skipping live API merge (skip_live=True) for game=%s", game.name)
 
     context = {
         "user_id": user_id,
