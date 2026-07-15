@@ -1,16 +1,27 @@
-"""Player stats submit + retrieve endpoints."""
+"""Player stats + assess (full 4-step mastery pipeline) endpoints."""
 
 import logging
-
+import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Game, PlayerStat, User
+from app.agent.assembler import AssemblerError, assemble_context
+from app.agent.assessor import AssessorError, assess
+from app.agent.errors import AgentPipelineHTTPError
+from app.agent.planner import PlannerError, generate_plan
+from app.agent.retriever import retrieve
+from app.db.models import CoachingPlan, Game, PlayerStat, User
 from app.db.session import get_db
-from app.schemas.player_schemas import PlayerStatsCreate, PlayerStatsResponse
+from app.schemas.player_schemas import (
+    AssessRequest,
+    AssessResponse,
+    AssessmentSummary,
+    PlayerStatsCreate,
+    PlayerStatsResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,3 +123,155 @@ async def get_player_stats(
             detail=f"No stats for user {user_id} and game {game_id}",
         )
     return stats
+
+
+@router.post(
+    "/players/{user_id}/assess/{game_id}",
+    response_model=AssessResponse,
+    description=(
+        "Run the full mastery pipeline: assemble context → assess weaknesses → "
+        "retrieve strategy chunks → generate and store a 7-day plan."
+    ),
+    response_description="Stored mastery plan plus assessment summary.",
+)
+async def assess_player(
+    user_id: int,
+    game_id: int,
+    body: AssessRequest = Body(default_factory=AssessRequest),
+    db: AsyncSession = Depends(get_db),
+) -> AssessResponse:
+    """
+    Wire Steps 1–4 for one user+game.
+
+    Takes: path user_id/game_id, optional AssessRequest (player_tag, skip_live).
+    Returns: AssessResponse with plan_id and full plan payload.
+    Calls: assemble_context, assess, retrieve, generate_plan(persist=True).
+    """
+    user = await db.get(User, user_id)
+    if user is None:
+        raise AgentPipelineHTTPError(
+            f"User {user_id} not found",
+            step="assembler",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    game = await db.get(Game, game_id)
+    if game is None:
+        raise AgentPipelineHTTPError(
+            f"Game {game_id} not found",
+            step="assembler",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    started = time.perf_counter()
+    try:
+        t0 = time.perf_counter()
+        context = await assemble_context(
+            user_id,
+            game_id,
+            db,
+            player_tag=body.player_tag,
+            skip_live=body.skip_live,
+        )
+        logger.info(
+            "Pipeline step=assembler ok (%.0fms)",
+            (time.perf_counter() - t0) * 1000,
+        )
+
+        t0 = time.perf_counter()
+        assessment = await assess(context, db)
+        logger.info(
+            "Pipeline step=assessor ok (%.0fms)",
+            (time.perf_counter() - t0) * 1000,
+        )
+
+        t0 = time.perf_counter()
+        chunks = retrieve(assessment, context)
+        logger.info(
+            "Pipeline step=retriever ok chunks=%d (%.0fms)",
+            len(chunks),
+            (time.perf_counter() - t0) * 1000,
+        )
+
+        t0 = time.perf_counter()
+        plan = await generate_plan(
+            context,
+            assessment,
+            chunks,
+            db,
+            persist=True,
+        )
+        logger.info(
+            "Pipeline step=planner ok (%.0fms)",
+            (time.perf_counter() - t0) * 1000,
+        )
+    except AssemblerError as exc:
+        code = status.HTTP_400_BAD_REQUEST
+        if "not found" in str(exc).lower():
+            code = status.HTTP_404_NOT_FOUND
+        raise AgentPipelineHTTPError(
+            str(exc),
+            step=getattr(exc, "step", "assembler"),
+            status_code=code,
+        ) from exc
+    except AssessorError as exc:
+        raise AgentPipelineHTTPError(
+            str(exc),
+            step=getattr(exc, "step", "assessor"),
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from exc
+    except PlannerError as exc:
+        raise AgentPipelineHTTPError(
+            str(exc),
+            step=getattr(exc, "step", "planner"),
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from exc
+    except ValueError as exc:
+        raise AgentPipelineHTTPError(
+            str(exc),
+            step="retriever",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from exc
+
+    if plan.plan_id is None:
+        raise AgentPipelineHTTPError(
+            "Plan generated but not persisted",
+            step="planner",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    row = await db.get(CoachingPlan, plan.plan_id)
+    retrieval_empty = len(plan.retrieved_chunk_ids) == 0
+    fallback_used = bool(assessment.fallback_used) or retrieval_empty
+
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "Pipeline done user=%s game=%s plan_id=%s chunks=%d fallback=%s (%.0fms)",
+        user_id,
+        game_id,
+        plan.plan_id,
+        len(plan.retrieved_chunk_ids),
+        fallback_used,
+        elapsed_ms,
+    )
+
+    return AssessResponse(
+        plan_id=plan.plan_id,
+        user_id=user_id,
+        game_id=game_id,
+        assessment=AssessmentSummary(
+            weaknesses=assessment.weaknesses,
+            skill_tier=assessment.skill_tier,
+            priority_focus=assessment.priority_focus,
+            fallback_used=assessment.fallback_used,
+        ),
+        skill_assessment=plan.skill_assessment,
+        seven_day_plan=plan.seven_day_plan,
+        loadout_recommendations=plan.loadout_recommendations,
+        rank_roadmap=plan.rank_roadmap,
+        experience_level=plan.experience_level,
+        retrieved_chunk_ids=plan.retrieved_chunk_ids,
+        chunk_count=len(plan.retrieved_chunk_ids),
+        fallback_used=fallback_used,
+        generated_at=row.generated_at if row else None,
+        expires_at=row.expires_at if row else None,
+    )

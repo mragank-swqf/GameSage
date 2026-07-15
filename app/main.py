@@ -1,9 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
+from app.agent.errors import AgentPipelineHTTPError
 from app.db.session import async_session_factory, close_db, verify_db_connection
 from app.routers import games, players, users
 from app.schemas.health_schemas import HealthResponse
@@ -36,6 +38,37 @@ app = FastAPI(
 app.include_router(users.router)
 app.include_router(games.router)
 app.include_router(players.router)
+
+
+@app.exception_handler(AgentPipelineHTTPError)
+async def agent_pipeline_error_handler(
+    _request: Request,
+    exc: AgentPipelineHTTPError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "step": exc.step,
+            "fallback_used": exc.fallback_used,
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(
+    _request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    logger.exception("Unhandled exception: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "step": "unknown",
+            "fallback_used": False,
+        },
+    )
 
 
 @app.get(
